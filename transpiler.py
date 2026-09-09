@@ -4,9 +4,15 @@ import numpy as np
 # Load the already trained model
 model = joblib.load("universal_strategy.joblib")
 
-feature_names = list(model.feature_names_in_)
-baseline = float(model._baseline_prediction.item())
-predictors = model._predictors  
+# Extract the HistGradientBoosting proxy from the VotingClassifier
+if hasattr(model, "named_estimators_"):
+    tree_model = model.named_estimators_["hgb"]
+else:
+    tree_model = model
+
+feature_names = list(tree_model.feature_names_in_)
+baseline = float(tree_model._baseline_prediction.item())
+predictors = tree_model._predictors  
 
 pine_code = []
 pine_code.append("//@version=6")
@@ -15,9 +21,18 @@ pine_code.append("")
 pine_code.append("// --- 1. EXACT FEATURE RECONSTRUCTION ---")
 pine_code.append("return_1d       = (close - close[1]) / close[1]")
 pine_code.append("volatility_20d  = ta.stdev(return_1d, 20)")
-pine_code.append("sma_20_ratio    = close / ta.sma(close, 20)")
-pine_code.append("sma_50_ratio    = close / ta.sma(close, 50)")
+pine_code.append("sma_20_ratio    = (close / ta.sma(close, 20)) - 1.0")
+pine_code.append("sma_50_ratio    = (close / ta.sma(close, 50)) - 1.0")
 pine_code.append("rsi_14          = ta.rsi(close, 14)")
+
+# Dynamically inject new features if the model expects them
+if "volume_ratio_20" in feature_names:
+    pine_code.append("vol_sma_20      = ta.sma(volume, 20)")
+    pine_code.append("volume_ratio_20 = volume / (vol_sma_20 + 1e-9)")
+if "atr_ratio" in feature_names:
+    pine_code.append("atr_14          = ta.atr(14)")
+    pine_code.append("atr_ratio       = atr_14 / close")
+    
 pine_code.append("")
 
 def render_node(nodes, idx):

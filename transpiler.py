@@ -75,7 +75,7 @@ pine_code.append("input_threshold = input.float(0.55, 'Buy Probability Threshold
 pine_code.append("long_condition  = prob >= input_threshold and barstate.isconfirmed")
 pine_code.append("")
 pine_code.append("// --- EXITS: DYNAMIC ATR SL/TP ---")
-pine_code.append("atr_14 = ta.atr(14)")
+# Removed the duplicate "atr_14 = ta.atr(14)" line here
 pine_code.append("sl_price = close - (atr_14 * 1.0)")
 pine_code.append("tp_price = close + (atr_14 * 1.5)")
 pine_code.append("")

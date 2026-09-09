@@ -6,7 +6,8 @@ model = joblib.load("universal_strategy.joblib")
 
 feature_names = list(model.feature_names_in_)
 baseline = float(model._baseline_prediction)
-predictors = model._predictors_  # list of trees (for binary classification, 1 per iteration)
+# Fixed attribute name based on scikit-learn 1.9.0 implementation
+predictors = model._predictors  
 
 pine_code = []
 pine_code.append("//@version=5")

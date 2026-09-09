@@ -5,7 +5,7 @@ import numpy as np
 model = joblib.load("universal_strategy.joblib")
 
 feature_names = list(model.feature_names_in_)
-baseline = float(model._baseline_prediction)
+baseline = float(model._baseline_prediction.item())
 # Fixed attribute name based on scikit-learn 1.9.0 implementation
 predictors = model._predictors  
 

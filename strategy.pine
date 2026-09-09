@@ -1,18 +1,16 @@
 //@version=6
 strategy("Lossless GBDT Strategy (NSE)", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, process_orders_on_close=true)
 
-// 1. FEATURES
-return_1d = (close - close[1]) / close[1]
-volatility_20d = ta.stdev(return_1d, 20)
-sma_20_ratio = (close / ta.sma(close, 20)) - 1.0
-sma_50_ratio = (close / ta.sma(close, 50)) - 1.0
-rsi_14 = ta.rsi(close, 14)
-vol_sma_20 = ta.sma(volume, 20)
-volume_ratio_20 = volume / (vol_sma_20 + 1e-9)
-atr_14 = ta.atr(14)
-atr_ratio = atr_14 / close
+// --- 1. EXACT FEATURE RECONSTRUCTION ---
+return_1d       = (close - close[1]) / close[1]
+volatility_20d  = ta.stdev(return_1d, 20)
+sma_20_ratio    = (close / ta.sma(close, 20)) - 1.0
+sma_50_ratio    = (close / ta.sma(close, 50)) - 1.0
+rsi_14          = ta.rsi(close, 14)
+atr_14          = ta.atr(14)
+atr_ratio       = atr_14 / close
 
-// 2. COMPILED TREE ENSEMBLE (HGB PROXY)
+// --- 2. COMPILED TREE ENSEMBLE ---
 calc_chunk_0() =>
     float score = 0.0
     score += (sma_20_ratio <= -0.08621963 ? (atr_ratio <= 0.01828689 ? (rsi_14 <= 0.00000000 ? 1.47382031 : 0.57884232) : (return_1d <= -0.04960978 ? (atr_ratio <= 0.05062091 ? (sma_20_ratio <= -0.11178276 ? 1.22652604 : 0.73542970) : (return_1d <= -0.08048779 ? (sma_20_ratio <= -0.15011230 ? 1.20986220 : 0.64109524) : (atr_ratio <= 0.06522339 ? (sma_20_ratio <= -0.13855682 ? 0.78585052 : 0.25575584) : 0.19110562))) : (atr_ratio <= 0.04526956 ? (return_1d <= -0.03163480 ? 0.63036526 : (return_1d <= 0.00000000 ? (atr_ratio <= 0.03674224 ? 0.40084957 : (sma_20_ratio <= -0.11178276 ? 0.44186730 : 0.12001858)) : 0.08592838)) : (sma_20_ratio <= -0.13855682 ? (atr_ratio <= 0.05707850 ? 0.47994140 : 0.09578134) : 0.02027960)))) : (return_1d <= -0.04288732 ? (atr_ratio <= 0.03598377 ? (atr_ratio <= 0.01783663 ? 1.35619237 : (sma_20_ratio <= -0.03905656 ? 0.62412708 : 0.24054267)) : (return_1d <= -0.08048779 ? 0.34269667 : 0.09548791)) : (sma_20_ratio <= -0.05078435 ? (atr_ratio <= 0.02554945 ? (return_1d <= 0.00000000 ? (atr_ratio <= 0.02018005 ? 0.60016995 : 0.27701390) : 0.03340110) : (atr_ratio <= 0.03358674 ? 0.07866192 : -0.01161020)) : (return_1d <= -0.01806716 ? (atr_ratio <= 0.02221583 ? (volatility_20d <= 0.01438707 ? 0.15352250 : 0.45559587) : -0.00892735) : -0.03065994))))
@@ -139,22 +137,21 @@ calc_chunk_8() =>
     score += (return_1d <= 0.07519421 ? (atr_ratio <= 0.00000000 ? -0.05226822 : (atr_ratio <= 0.07113786 ? (return_1d <= -0.08048779 ? (sma_20_ratio <= 0.03176645 ? (sma_20_ratio <= -0.04902275 ? 0.00784798 : 0.03261871) : -0.02231187) : (sma_20_ratio <= 0.18122453 ? (sma_20_ratio <= -0.11178276 ? (volatility_20d <= 0.05618294 ? (rsi_14 <= 16.71751825 ? -0.00006279 : (return_1d <= -0.03752131 ? (atr_ratio <= 0.03265290 ? -0.04181275 : (atr_ratio <= 0.03854450 ? 0.04029726 : 0.00225474)) : (sma_20_ratio <= -0.15011230 ? 0.03219165 : (sma_50_ratio <= -0.22021813 ? -0.02186028 : 0.01367784)))) : -0.03562248) : (sma_50_ratio <= -0.13634523 ? (rsi_14 <= 66.38033537 ? (volatility_20d <= 0.02194322 ? (rsi_14 <= 32.03741271 ? -0.00277613 : 0.02370724) : -0.01083553) : 0.06386324) : (atr_ratio <= 0.01682873 ? (return_1d <= -0.02349817 ? 0.03138276 : (return_1d <= 0.00355283 ? (return_1d <= -0.00024381 ? (atr_ratio <= 0.00712519 ? (volatility_20d <= 0.01106409 ? 0.14165231 : 0.00838251) : -0.00586454) : 0.00888066) : -0.01824829)) : -0.00025378))) : -0.01781201)) : (volatility_20d <= 0.05105018 ? (sma_20_ratio <= -0.09661675 ? (atr_ratio <= 0.09241532 ? (volatility_20d <= 0.03856222 ? -0.00981232 : 0.01442564) : -0.02933714) : -0.02167738) : (return_1d <= 0.03636360 ? 0.00115217 : 0.04048868)))) : -0.03575709)
     score
 
-// 3. INFERENCE & EXECUTION
+// --- 3. INFERENCE & EXECUTION ---
 float baseline = -3.70558681
 float raw_margin = baseline + calc_chunk_0() + calc_chunk_1() + calc_chunk_2() + calc_chunk_3() + calc_chunk_4() + calc_chunk_5() + calc_chunk_6() + calc_chunk_7() + calc_chunk_8()
 float prob = 1.0 / (1.0 + math.exp(-raw_margin))
 
-input_threshold = input.float(0.52, 'Buy Probability Threshold', minval=0.40, maxval=0.95, step=0.01)
-long_condition = prob >= input_threshold and barstate.isconfirmed
+input_threshold = input.float(0.55, 'Buy Probability Threshold', minval=0.50, maxval=0.95, step=0.01)
+exit_threshold  = input.float(0.45, 'Exit/Sell Probability Threshold', minval=0.10, maxval=0.50, step=0.01)
+
+long_condition  = prob >= input_threshold and barstate.isconfirmed
+exit_condition  = prob <= exit_threshold and barstate.isconfirmed
 
 if (long_condition)
     strategy.entry("Long", strategy.long)
-
-// Dynamic SL and TP based on ATR
-sl_price = close - (atr_14 * 1.0)
-tp_price = close + (atr_14 * 1.5)
-if (strategy.position_size > 0)
-    strategy.exit("Exit Long", "Long", limit=tp_price, stop=sl_price)
+if (exit_condition)
+    strategy.close("Long")
 
 plot(prob, "Model Probability", color=color.purple, display=display.pane)
 hline(0.5, "Neutral", color=color.gray, linestyle=hline.style_dashed)

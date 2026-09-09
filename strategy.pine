@@ -146,7 +146,6 @@ input_threshold = input.float(0.55, 'Buy Probability Threshold', minval=0.50, ma
 long_condition  = prob >= input_threshold and barstate.isconfirmed
 
 // --- EXITS: DYNAMIC ATR SL/TP ---
-atr_14 = ta.atr(14)
 sl_price = close - (atr_14 * 1.0)
 tp_price = close + (atr_14 * 1.5)
 

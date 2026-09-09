@@ -5,13 +5,13 @@ on:
     paths:
       - 'universal_strategy.joblib'
       - 'transpiler.py'
-  workflow_dispatch: # Allows manual triggering from the GitHub UI
+  workflow_dispatch:
 
 jobs:
   transpile:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required to push the Pine Script back to the repo
+      contents: write 
 
     steps:
       - name: Checkout Repository
@@ -23,7 +23,8 @@ jobs:
           python-version: '3.10'
 
       - name: Install Dependencies
-        run: pip install joblib numpy scikit-learn
+        # Pinned scikit-learn version to match the serialized model environment
+        run: pip install joblib numpy scikit-learn==1.9.0
 
       - name: Execute Transpiler
         run: python transpiler.py
